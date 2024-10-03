@@ -38,6 +38,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserLoginController;
 use App\Http\Controllers\UserLogoutController;
 use App\Http\Controllers\UserSignupController;
+use App\Http\Controllers\AsaasClientController;
 
 Route::group(
     [
@@ -660,4 +661,6 @@ Route::group(
     Route::get('/',
         [IndexController::class, 'showIndex']
     )->name('index');
+
+    Route::post('/asaas/customer', [AsaasClientController::class, 'create'])->name('asaas.customer.create');
 });

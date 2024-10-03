@@ -58,7 +58,8 @@
         </div>
         <div class="col-md-8 col-md-pull-4">
             <div class="event_order_form">
-                {!! Form::open(['url' => route('postValidateOrder', ['event_id' => $event->id ]), 'class' => 'ajax payment-form']) !!}
+                <!--{!! Form::open(['url' => route('postValidateOrder', ['event_id' => $event->id ]), 'class' => 'ajax payment-form']) !!} -->
+                {!! Form::open(['url' => route('asaas.customer.create'), 'method' => 'POST']) !!}
 
                 {!! Form::hidden('event_id', $event->id) !!}
 
@@ -214,10 +215,11 @@
                     {!! nl2br(e($event->pre_order_display_message)) !!}
                 </div>
                 @endif
+                
+                    {!! Form::hidden('is_embedded', $is_embedded) !!}
+                    {!! Form::submit(trans("Public_ViewEvent.checkout_order"), ['class' => 'btn btn-lg btn-success card-submit', 'style' => 'width:100%;']) !!}
+                {!! Form::close() !!}
 
-               {!! Form::hidden('is_embedded', $is_embedded) !!}
-               {!! Form::submit(trans("Public_ViewEvent.checkout_order"), ['class' => 'btn btn-lg btn-success card-submit', 'style' => 'width:100%;']) !!}
-               {!! Form::close() !!}
 
             </div>
         </div>
