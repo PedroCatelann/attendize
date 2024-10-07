@@ -31,7 +31,7 @@ use Omnipay;
 use PDF;
 use PhpSpec\Exception\Exception;
 use Validator;
-
+use GuzzleHttp\Client;
 class EventCheckoutController extends Controller
 {
     /**
@@ -277,8 +277,12 @@ class EventCheckoutController extends Controller
 
     }
 
+    
+
     public function postValidateOrder(Request $request, $event_id)
     {
+        
+       
         //If there's no session kill the request and redirect back to the event homepage.
         if (!session()->get('ticket_order_' . $event_id)) {
             return response()->json([
@@ -292,7 +296,7 @@ class EventCheckoutController extends Controller
 
         $request_data = session()->get('ticket_order_' . $event_id . ".request_data");
         $request_data = (!empty($request_data[0])) ? array_merge($request_data[0], $request->all())
-                                                   : $request->all();
+                                                : $request->all();
 
         session()->remove('ticket_order_' . $event_id . '.request_data');
         session()->push('ticket_order_' . $event_id . '.request_data', $request_data);
@@ -335,7 +339,7 @@ class EventCheckoutController extends Controller
                 'messages' => $order->errors(),
             ]);
         }
-
+        
         return response()->json([
             'status'      => 'success',
             'redirectUrl' => route('showEventPayment', [
@@ -343,11 +347,69 @@ class EventCheckoutController extends Controller
                     'is_embedded' => $this->is_embedded
                 ])
         ]);
-
     }
 
-    public function showEventPayment(Request $request, $event_id)
+    public function postCreateCustomerAsaas(Request $request, $event_id) {
+        
+        $validator = Validator::make($request->all(), [
+            'order_first_name' => 'required|string|max:255',            
+            'order_email' => 'required|email|max:255', 
+            'cpfCnpj' => 'required|string|max:255',                       
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        $client = new Client();
+        
+        // Dados do cliente
+        $data = [
+            'name' => $request->order_first_name,
+            'cpfCnpj' => $request->cpfCnpj,
+            'email' => $request->order_email,
+        ];
+
+        // Chamada para a API do Asaas
+        try {
+            $response = $client->request('POST', 'https://sandbox.asaas.com/api/v3/customers', [
+                'body' => json_encode($data),
+                'headers' => [
+                    'accept' => 'application/json',
+                    'content-type' => 'application/json',
+                    'access_token' => env('ASAAS_API_KEY'),
+                ],
+            ]);
+            $responseData = json_decode($response->getBody(), true);
+
+            // Obtém o customerId
+            $customerId = $responseData['id'] ?? null; // Verifica se o campo 'id' existe
+            
+            if ($customerId) {                
+                // Retorna uma resposta JSON com o status e URL de redirecionamento
+                return response()->json([
+                    'status'      => 'success',                    
+                    'redirectUrl' => route('showEventPayment', [
+                        'event_id'    => $event_id,
+                        'customerId'  => $customerId,
+                    ])
+                ]);
+            } else {
+                // Tratamento de erro caso o ID não esteja presente na resposta
+                return response()->json(['status' => 'error', 'message' => 'Erro ao obter customerId do Asaas.']);
+            }
+
+        } catch (\Exception $e) {
+            
+            return $e->getMessage();
+        }
+        // Validação dos dados do cliente
+        
+    }
+
+    public function showEventPayment(Request $request, $event_id, $customerId)
     {
+        
         $order_session = session()->get('ticket_order_' . $event_id);
         $event = Event::findOrFail($event_id);
 
@@ -370,10 +432,12 @@ class EventCheckoutController extends Controller
                      'account_payment_gateway' => $account_payment_gateway,
                      'payment_gateway' => $payment_gateway,
                      'secondsToExpire' => $secondsToExpire,
-                     'payment_failed' => $payment_failed
+                     'payment_failed' => $payment_failed,
+                     'customer_id' => $customerId
         ];
 
         return view('Public.ViewEvent.EventPagePayment', $viewData);
+        //return "Validado";
     }
 
     /**

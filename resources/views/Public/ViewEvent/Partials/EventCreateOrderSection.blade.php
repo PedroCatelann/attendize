@@ -58,8 +58,8 @@
         </div>
         <div class="col-md-8 col-md-pull-4">
             <div class="event_order_form">
-                <!--{!! Form::open(['url' => route('postValidateOrder', ['event_id' => $event->id ]), 'class' => 'ajax payment-form']) !!} -->
-                {!! Form::open(['url' => route('asaas.customer.create'), 'method' => 'POST']) !!}
+                {!! Form::open(['url' => route('postCreateCustomerAsaas', ['event_id' => $event->id ]), 'class' => 'ajax payment-form']) !!} 
+                <!--{!! Form::open(['url' => route('asaas.customer.create'), 'method' => 'POST']) !!}-->
 
                 {!! Form::hidden('event_id', $event->id) !!}
 
@@ -81,10 +81,16 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-xs-6">
                         <div class="form-group">
                             {!! Form::label("order_email", trans("Public_ViewEvent.email")) !!}
                             {!! Form::text("order_email", null, ['required' => 'required', 'class' => 'form-control']) !!}
+                        </div>
+                    </div>
+                    <div class="col-xs-6">
+                        <div class="form-group">
+                            {!! Form::label("cpfCnpj", trans("Public_ViewEvent.cpfCnpj")) !!}
+                            {!! Form::text("cpfCnpj", null, ['required' => 'required', 'class' => 'form-control']) !!}
                         </div>
                     </div>
                 </div>

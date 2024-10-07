@@ -3,6 +3,9 @@
         <h1 class="section_head">
             @lang("Public_ViewEvent.payment_information")
         </h1>
+        <h1>
+            {{$customer_id}}
+        </h1>
     </div>
     @if($payment_failed)
     <div class="row">
@@ -66,15 +69,7 @@
         <div class="col-md-8 col-md-pull-4">
             <div class="row">
 
-                @if($order_requires_payment)
-                @include('Public.ViewEvent.Partials.OfflinePayments')
-                @endif
-                @if($order_requires_payment && $payment_gateway && View::exists($payment_gateway['checkout_blade_template']))
-                @include($payment_gateway['checkout_blade_template'])
-                @endif
-                @if(!$order_requires_payment)
-                @include('Public.ViewEvent.Partials.PaymentFree')
-                @endif
+                
 
 
             </div>

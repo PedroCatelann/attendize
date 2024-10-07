@@ -176,12 +176,14 @@ Route::group(
         Route::post('{event_id}/checkout/',
             [EventCheckoutController::class, 'postValidateTickets']
         )->name('postValidateTickets');
-
+        Route::post('{event_id}/checkout/createCustomerAsaas',
+            [EventCheckoutController::class, 'postCreateCustomerAsaas']
+        )->name('postCreateCustomerAsaas');
         Route::post('{event_id}/checkout/validate',
             [EventCheckoutController::class, 'postValidateOrder']
         )->name('postValidateOrder');
 
-        Route::get('{event_id}/checkout/payment',
+        Route::get('{event_id}/{customerId}/checkout/payment',
             [EventCheckoutController::class, 'showEventPayment']
         )->name('showEventPayment');
 

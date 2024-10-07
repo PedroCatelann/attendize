@@ -14,7 +14,8 @@ class AsaasClientController extends Controller
         // Validação dos dados do cliente
         $validator = Validator::make($request->all(), [
             'order_first_name' => 'required|string|max:255',            
-            'order_email' => 'required|email|max:255',                        
+            'order_email' => 'required|email|max:255', 
+            'cpfCnpj' => 'required|string|max:255',                       
         ]);
 
         if ($validator->fails()) {
@@ -26,7 +27,7 @@ class AsaasClientController extends Controller
         // Dados do cliente
         $data = [
             'name' => $request->order_first_name,
-            'cpfCnpj' => '69075667027',
+            'cpfCnpj' => $request->cpfCnpj,
             'email' => $request->order_email,
         ];
 
