@@ -59,7 +59,7 @@
         <div class="col-md-8 col-md-pull-4">
             <div class="event_order_form">
                 {!! Form::open(['url' => route('postCreateCustomerAsaas', ['event_id' => $event->id ]), 'class' => 'ajax payment-form']) !!} 
-                <!--{!! Form::open(['url' => route('asaas.customer.create'), 'method' => 'POST']) !!}-->
+                <!-- {!! Form::open(['url' => route('asaas.customer.create'), 'method' => 'POST']) !!} -->
 
                 {!! Form::hidden('event_id', $event->id) !!}
 
