@@ -179,6 +179,9 @@ Route::group(
         Route::post('{event_id}/checkout/createCustomerAsaas',
             [EventCheckoutController::class, 'postCreateCustomerAsaas']
         )->name('postCreateCustomerAsaas');
+        Route::post('/pagamento/createCobrancaAsaas',
+            [EventCheckoutController::class, 'createCobrancaAsaas']
+        )->name('createCobrancaAsaas');
         Route::post('{event_id}/{customerId}/checkout/validate',
             [EventCheckoutController::class, 'postValidateOrder']
         )->name('postValidateOrder');

@@ -350,7 +350,8 @@ class EventCheckoutController extends Controller
     }
 
     public function postCreateCustomerAsaas(Request $request, $event_id) {
-        
+                
+
         $validator = Validator::make($request->all(), [
             'order_first_name' => 'required|string|max:255',            
             'order_email' => 'required|email|max:255', 
@@ -433,6 +434,62 @@ class EventCheckoutController extends Controller
 
         return view('Public.ViewEvent.EventPagePayment', $viewData);
         //return "Validado";
+    }
+
+    public function createCobrancaAsaas(Request $request) {
+        $validatedData = $request->validate([
+            'billingType' => 'required|in:boleto,pix,cartao_credito',
+            'customerId' => 'required|string|max:255',  
+        ]);
+    
+        $billingType = $validatedData['billingType'];
+        $hojeMaisDoisDias = Carbon::now()->addDays(2)->format('Y-m-d');
+
+        $client = new Client();
+
+        if($billingType == "boleto") {
+            $data = [
+                'customer'=> $request->customerId,
+                'billingType'=> 'boleto',
+                'value' => $request->order_total,
+                'dueDate'=> $hojeMaisDoisDias
+            ];
+
+            try {
+                $response = $client->request('POST', 'https://sandbox.asaas.com/api/v3/payments', [
+                    'body' => json_encode($data),
+                    'headers' => [
+                        'accept' => 'application/json',
+                        'content-type' => 'application/json',
+                        'access_token' => env('ASAAS_API_KEY'),
+                    ],
+                ]);                                    
+                
+                
+                if ($response->getStatusCode() === 200) {
+                    // Obter a resposta JSON
+                    $responseData = json_decode($response->getBody(), true);
+                    
+                    // Pegar a URL do boleto
+                    $bankSlipUrl = $responseData['bankSlipUrl'];
+                    
+                    // Redirecionar para a URL do boleto
+                    //return response()->json(['bankSlipUrl' => $bankSlipUrl]);
+                    return redirect()->away($bankSlipUrl);
+                } else {
+                    // Tratamento de erro caso o ID não esteja presente na resposta
+                    return back()->withErrors('Erro ao gerar o boleto.');
+                }
+    
+            } catch (\Exception $e) {
+                
+                return $e->getMessage();
+            }
+        }
+
+        
+
+        
     }
 
     /**

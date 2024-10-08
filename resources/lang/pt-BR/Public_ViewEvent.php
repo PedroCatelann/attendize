@@ -97,5 +97,6 @@ return [
     'your_information'                  => 'Suas informações',
     'your_message'                      => 'Sua mensagem',
     'your_name'                         => 'Seu nome',
-    'cpfCnpj'                               => 'CPF ou CNPJ'
+    'cpfCnpj'                               => 'CPF ou CNPJ',
+    'billingType'                       => 'Tipo de Pagamento' 
 ];
