@@ -70,7 +70,7 @@
 
         <div class="col-md-8 col-md-pull-4">
             <div class="row">
-            {!! Form::open(['url' => route('createCobrancaAsaas'), 'method' => 'POST', 'id' => 'paymentForm']) !!} 
+            {!! Form::open([ 'method' => 'POST', 'id' => 'paymentForm']) !!} 
                 {!! Form::hidden('customerId', $customer_id) !!}
                 {!! Form::hidden('order_total', $order_total) !!}
                 {!! Form::hidden('event_id', $event->id) !!}
@@ -100,3 +100,45 @@
 @if(session()->get('message'))
 <script>showMessage('{{session()->get('message')}}');</script>
 @endif
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentForm = document.getElementById('paymentForm');
+
+    paymentForm.addEventListener('submit', function(event) {
+        event.preventDefault(); // Impede o envio padrão do formulário
+
+        // Coleta os dados do formulário
+        const formData = new FormData(paymentForm);
+        
+        // Converte FormData para um objeto
+        const formObject = Object.fromEntries(formData.entries());
+        
+        fetch('{{ route('createCobrancaAsaas') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json', // Defina o tipo de conteúdo como JSON
+            },
+            body: JSON.stringify(formObject), // Converte o objeto para JSON
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro na requisição');
+            }
+            return response.json(); // Converte a resposta em JSON
+        })
+        .then(data => {
+            if (data.bankSlipUrl) {
+                // Abre a URL do boleto em uma nova aba
+                window.open(data.bankSlipUrl, '_blank');
+            } else {
+                alert('Erro ao gerar o boleto: ' + (data.error || 'Desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao criar a cobrança.');
+        });
+    });
+});
+</script>

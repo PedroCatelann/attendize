@@ -474,8 +474,8 @@ class EventCheckoutController extends Controller
                     $bankSlipUrl = $responseData['bankSlipUrl'];
                     
                     // Redirecionar para a URL do boleto
-                    //return response()->json(['bankSlipUrl' => $bankSlipUrl]);
-                    return redirect()->away($bankSlipUrl);
+                    return response()->json(['bankSlipUrl' => $bankSlipUrl]);
+                    //return redirect()->away($bankSlipUrl);
                 } else {
                     // Tratamento de erro caso o ID não esteja presente na resposta
                     return back()->withErrors('Erro ao gerar o boleto.');
