@@ -80,11 +80,25 @@
                 <div class="row">
                     <div class="col-xs-12">
                         <div class="form-group">
+                            {!! Form::label('billingType', 'Opção de Pagamento') !!}
                             {!! Form::select('billingType', [
                                 'boleto' => 'BOLETO',
                                 'pix' => 'PIX',
                                 'cartao_credito' => 'CARTÃO DE CRÉDITO'
-                            ], null, ['required' => 'required', 'class' => 'form-control']) !!}
+                            ], null, ['required' => 'required', 'class' => 'form-control', 'id' => 'billingType']) !!}
+                        </div>
+                    </div>                    
+                </div>
+
+                <div class="row" id="qntd_parcelas" style="display: none;">
+                    <div class="col-xs-12">
+                        <div class="form-group">
+                        {!! Form::label('parcelas', 'Quantidade de Parcelas') !!}
+                        {!! Form::select('parcelas', 
+                            array_combine(range(1, $vezes_no_cartao), range(1, $vezes_no_cartao)), // Gerando um array com valores de 1 a 5
+                            null, 
+                            ['class' => 'form-control', 'id' => 'parcelas']) !!}
+
                         </div>
                     </div>                    
                 </div>
@@ -101,8 +115,20 @@
 <script>showMessage('{{session()->get('message')}}');</script>
 @endif
 <script>
+
+
 document.addEventListener('DOMContentLoaded', function() {
     const paymentForm = document.getElementById('paymentForm');
+    var billingTypeSelect = document.getElementById('billingType');
+    var creditCardDiv = document.getElementById('qntd_parcelas'); // Corrigido o ID
+
+    billingTypeSelect.addEventListener('change', function() {
+        if (this.value === 'cartao_credito') {
+            creditCardDiv.style.display = 'block'; // Exibe a div
+        } else {
+            creditCardDiv.style.display = 'none';  // Oculta a div
+        }
+    });
 
     paymentForm.addEventListener('submit', function(event) {
         event.preventDefault(); // Impede o envio padrão do formulário
@@ -128,15 +154,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json(); // Converte a resposta em JSON
         })
         .then(data => {
-            if (data.bankSlipUrl) {
+            if(data.invoiceUrl && data.tipoPagamento === 'pix') {
+                window.open(data.invoiceUrl, '_blank')
+            }
+            if(data.invoiceUrl && data.tipoPagamento === 'cartao_credito') {
+                window.open(data.invoiceUrl, '_blank')
+            }
+            if (data.bankSlipUrl && data.tipoPagamento === 'boleto') {
                 // Abre a URL do boleto em uma nova aba
                 window.open(data.bankSlipUrl, '_blank');
-            } else {
-                alert('Erro ao gerar o boleto: ' + (data.error || 'Desconhecido'));
-            }
+            } 
+            /* else {
+                alert('Erro ao gerar o pagamento: ' + (data.error || 'Desconhecido'));
+            } */
         })
         .catch(error => {
-            console.error('Erro:', error);
+            console.log('Erro:', error);
             alert('Erro ao criar a cobrança.');
         });
     });

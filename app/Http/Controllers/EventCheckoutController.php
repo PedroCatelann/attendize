@@ -413,6 +413,22 @@ class EventCheckoutController extends Controller
         $order_total = $order_session['order_total'];
         $account_payment_gateway = $order_session['account_payment_gateway'];
 
+        if($order_total < 50) {
+            $vezes_no_cartao = 1;
+        }
+        if($order_total > 50 && $order_total < 120) {
+            $vezes_no_cartao = 2;
+        }
+        if($order_total >= 120 && $order_total < 150) {
+            $vezes_no_cartao = 3;
+        }
+        if($order_total >= 150 && $order_total < 200) {
+            $vezes_no_cartao = 4;
+        }
+        if($order_total >= 200) {
+            $vezes_no_cartao = 5;
+        }
+
         $orderService = new OrderService($order_session['order_total'], $order_session['total_booking_fee'], $event);
         $orderService->calculateFinalCosts();
 
@@ -429,7 +445,8 @@ class EventCheckoutController extends Controller
                      'payment_gateway' => $payment_gateway,
                      'secondsToExpire' => $secondsToExpire,
                      'payment_failed' => $payment_failed,
-                     'customer_id' => $customerId
+                     'customer_id' => $customerId,
+                     'vezes_no_cartao' => $vezes_no_cartao
         ];
 
         return view('Public.ViewEvent.EventPagePayment', $viewData);
@@ -440,9 +457,11 @@ class EventCheckoutController extends Controller
         $validatedData = $request->validate([
             'billingType' => 'required|in:boleto,pix,cartao_credito',
             'customerId' => 'required|string|max:255',  
+            'parcelas' => 'required_if:billingType,cartao_credito|integer|min:1|max:5'
         ]);
     
         $billingType = $validatedData['billingType'];
+        $parcelas = $validatedData['parcelas'];
         $hojeMaisDoisDias = Carbon::now()->addDays(2)->format('Y-m-d');
 
         $client = new Client();
@@ -474,7 +493,7 @@ class EventCheckoutController extends Controller
                     $bankSlipUrl = $responseData['bankSlipUrl'];
                     
                     // Redirecionar para a URL do boleto
-                    return response()->json(['bankSlipUrl' => $bankSlipUrl]);
+                    return response()->json(['bankSlipUrl' => $bankSlipUrl, 'tipoPagamento' => 'boleto']);
                     //return redirect()->away($bankSlipUrl);
                 } else {
                     // Tratamento de erro caso o ID não esteja presente na resposta
@@ -486,7 +505,88 @@ class EventCheckoutController extends Controller
                 return $e->getMessage();
             }
         }
+        if($billingType == "pix") {
+            $data = [
+                'customer'=> $request->customerId,
+                'billingType'=> 'pix',
+                'value' => $request->order_total,
+                'dueDate'=> $hojeMaisDoisDias
+            ];
 
+            try {
+                $response = $client->request('POST', 'https://sandbox.asaas.com/api/v3/payments', [
+                    'body' => json_encode($data),
+                    'headers' => [
+                        'accept' => 'application/json',
+                        'content-type' => 'application/json',
+                        'access_token' => env('ASAAS_API_KEY'),
+                    ],
+                ]);                                    
+                
+                
+                if ($response->getStatusCode() === 200) {
+                    // Obter a resposta JSON
+                    $responseData = json_decode($response->getBody(), true);
+                    
+                    // Pegar a URL do boleto
+                    $invoiceUrl = $responseData['invoiceUrl'];
+                    
+                    // Redirecionar para a URL do boleto
+                    return response()->json(['invoiceUrl' => $invoiceUrl, 'tipoPagamento' => 'pix']);
+                    //return redirect()->away($bankSlipUrl);
+                } else {
+                    // Tratamento de erro caso o ID não esteja presente na resposta
+                    return back()->withErrors('Erro ao gerar o boleto.');
+                }
+    
+            } catch (\Exception $e) {
+                
+                return $e->getMessage();
+            }
+        }
+        if($billingType == "cartao_credito") {
+            $installmentValue = $request->order_total / $parcelas;
+            
+            $data = [
+                'customer'=> $request->customerId,
+                'billingType'=> 'credit_card',
+                'value' => $request->order_total,
+                'dueDate'=> $hojeMaisDoisDias,
+                'installmentCount' => $parcelas,
+                'installmentValue' => $installmentValue
+            ];
+
+            try {
+                $response = $client->request('POST', 'https://sandbox.asaas.com/api/v3/payments', [
+                    'body' => json_encode($data),
+                    'headers' => [
+                        'accept' => 'application/json',
+                        'content-type' => 'application/json',
+                        'access_token' => env('ASAAS_API_KEY'),
+                    ],
+                ]);                                    
+                
+                
+                if ($response->getStatusCode() === 200) {
+                    // Obter a resposta JSON
+                    $responseData = json_decode($response->getBody(), true);
+                    
+                    // Pegar a URL do boleto
+                    $invoiceUrl = $responseData['invoiceUrl'];
+                    
+                    // Redirecionar para a URL do boleto
+                    return response()->json(['invoiceUrl' => $invoiceUrl, 'tipoPagamento' => 'cartao_credito']);
+                    //return redirect()->away($bankSlipUrl);
+                } else {
+                    // Tratamento de erro caso o ID não esteja presente na resposta
+                    return back()->withErrors('Erro ao gerar o boleto.');
+                }
+    
+            } catch (\Exception $e) {
+                
+                return $e->getMessage();
+            }
+        }
         
 
         
